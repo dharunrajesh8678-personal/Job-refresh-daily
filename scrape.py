@@ -56,7 +56,9 @@ KEYWORDS = [
 # Cities you'd actually take. "remote" and "india" are useful catch-alls.
 LOCATIONS = ["chennai", "coimbatore", "madurai", "trichy", "tiruchirappalli",
              "salem", "erode", "hosur", "bangalore", "bengaluru", "hyderabad",
-             "tamil nadu", "remote", "india"]
+             "tamil nadu", "india"]
+# Note: bare "remote" is deliberately absent. It matched "Remote, Denmark".
+# "Remote, India" still gets through on the "india" token.
 
 # Companies whose careers pages run on a public ATS. This is where the
 # good IT listings come from — straight from the employer, no middleman.
@@ -71,15 +73,15 @@ ASHBY_BOARDS      = ["zepto"]
 
 # Government notification pages. These are plain HTML and scrape cleanly.
 GOVT_SOURCES = [
-    ("TNPSC",                     "tn",      "https://www.tnpsc.gov.in/"),
-    ("TNUSRB",                    "tn",      "https://www.tnusrb.tn.gov.in/"),
-    ("TN Medical Services Board", "tn",      "https://www.mrb.tn.gov.in/"),
-    ("Teachers Recruitment Board","tn",      "https://www.trb.tn.gov.in/"),
-    ("TANGEDCO",                  "tn",      "https://www.tangedco.gov.in/"),
-    ("TN Velaivaaippu",           "tn",      "https://www.tnvelaivaaippu.gov.in/"),
+    ("TNPSC",                     "tn",      "https://tnpsc.gov.in/"),
+    ("TNUSRB",                    "tn",      "https://tnusrb.tn.gov.in/"),
+    ("TN Medical Services Board", "tn",      "https://mrb.tn.gov.in/"),
+    ("Teachers Recruitment Board","tn",      "https://trb.tn.gov.in/"),
+    ("TANGEDCO",                  "tn",      "https://tangedco.gov.in/"),
+    ("TN Velaivaaippu",           "tn",      "https://tnvelaivaaippu.gov.in/"),
     ("Staff Selection Commission","central", "https://ssc.gov.in/"),
     ("UPSC",                      "central", "https://upsc.gov.in/"),
-    ("IBPS",                      "central", "https://www.ibps.in/"),
+    ("IBPS",                      "central", "https://ibps.in/"),
     ("India Post GDS",            "central", "https://indiapostgdsonline.gov.in/"),
 ]
 
@@ -262,18 +264,28 @@ def from_ashby(slug):
 # ---------- source: government notification pages ----------
 
 NOTIFY_WORDS = ["recruitment", "notification", "vacanc", "advertisement",
-                "apply online", "direct recruitment", "appointment"]
+                "apply online", "direct recruitment", "appointment", "recruit",
+                "announcement", "career", "opening", "post", "exam"]
+
+# Links on a homepage that probably lead to the page we actually want.
+GATEWAY_WORDS = ["notification", "recruitment", "advertisement", "career",
+                 "announcement", "what's new", "whats new", "vacanc"]
 
 
-def from_govt(org, cat, url):
-    r = get(url)
-    if not r:
-        return []
-    soup = BeautifulSoup(r.text, "html.parser")
+def absolute(base, href):
+    if href.startswith("http"):
+        return href
+    root = "/".join(base.split("/")[:3])
+    return root + href if href.startswith("/") else base.rstrip("/") + "/" + href
+
+
+def harvest(page_url, html, org, cat):
+    """Pull notification-looking links out of one page."""
+    soup = BeautifulSoup(html, "html.parser")
     seen, out = set(), []
     for a in soup.find_all("a", href=True):
         text = " ".join(a.get_text(" ", strip=True).split())
-        if len(text) < 12 or len(text) > 160:
+        if not (10 <= len(text) <= 180):
             continue
         if not any(w in text.lower() for w in NOTIFY_WORDS):
             continue
@@ -281,20 +293,56 @@ def from_govt(org, cat, url):
             continue
         seen.add(text.lower())
 
-        href = a["href"]
-        if href.startswith("/"):
-            href = url.rstrip("/") + href
-        elif not href.startswith("http"):
-            href = url.rstrip("/") + "/" + href
-
         context = text + " " + " ".join(
-            p.get_text(" ", strip=True) for p in a.find_parents(limit=2))
+            p.get_text(" ", strip=True)[:200] for p in a.find_parents(limit=2))
         close, confirmed = find_close_date(context)
 
-        out.append(row(text, org, cat, close, href,
+        out.append(row(text, org, cat, close, absolute(page_url, a["href"]),
                        "Tamil Nadu" if cat == "tn" else "All India",
                        guess_qual(context), text.lower(), verify=not confirmed))
-    return out[:25]
+    return out
+
+
+def from_govt(org, cat, url):
+    """Read the landing page, then follow up to 3 notification links one level
+    deeper. Homepages rarely list the notices themselves — that was the bug
+    that produced zero government results."""
+    r = get(url)
+    if not r:
+        return []
+
+    out = harvest(url, r.text, org, cat)
+
+    # find inner pages worth following
+    soup = BeautifulSoup(r.text, "html.parser")
+    gateways, seen_urls = [], {url}
+    for a in soup.find_all("a", href=True):
+        blob = (a.get_text(" ", strip=True) + " " + a["href"]).lower()
+        if not any(w in blob for w in GATEWAY_WORDS):
+            continue
+        target = absolute(url, a["href"])
+        if target in seen_urls or target.lower().endswith(".pdf"):
+            continue
+        seen_urls.add(target)
+        gateways.append(target)
+        if len(gateways) >= 3:
+            break
+
+    for g in gateways:
+        log(f"  following {g}")
+        rr = get(g)
+        if rr:
+            out += harvest(g, rr.text, org, cat)
+        time.sleep(1)
+
+    # de-duplicate within this source
+    uniq, final = set(), []
+    for j in out:
+        if j["title"].lower() in uniq:
+            continue
+        uniq.add(j["title"].lower())
+        final.append(j)
+    return final[:30]
 
 
 # ---------- source: Adzuna (optional key, broad India coverage) ----------
@@ -400,4 +448,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-        
