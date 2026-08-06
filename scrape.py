@@ -131,9 +131,42 @@ def wanted(text):
     return any(k in t for k in KEYWORDS)
 
 
+# Titles above your level. At 1-3 years these are noise.
+TOO_SENIOR = [
+    "senior", "sr.", "staff ", "principal", "lead ", " lead", "director",
+    "head of", "vp ", "vice president", "chief", "architect", "manager",
+    "iii", " iv", "expert", "specialist ii",
+]
+
+
+def right_level(title):
+    t = title.lower()
+    return not any(s in t for s in TOO_SENIOR)
+
+
 def in_range(text):
-    t = (text or "").lower()
-    return any(l in t for l in LOCATIONS) if t.strip() else True
+    """Strict. A listing with no location, or a location we don't recognise,
+    is rejected — that's what let Nordics and Italy through last time."""
+    t = (text or "").lower().strip()
+    if not t:
+        return False
+    return any(l in t for l in LOCATIONS)
+
+
+# Words that mean the role is not a technical one, even at a tech company.
+NON_TECH = [
+    "account executive", "sales", "business development", "marketing",
+    "recruit", "talent", "people ", "human resources", "hr ",
+    "finance", "accounting", "legal", "customer success", "support specialist",
+    "operations", "administrative", "office ", "procurement",
+]
+
+
+def classify(title, fallback="it"):
+    t = title.lower()
+    if any(n in t for n in NON_TECH):
+        return "nonit"
+    return fallback
 
 
 def guess_qual(text):
@@ -187,9 +220,9 @@ def from_greenhouse(slug):
     out = []
     for j in r.json().get("jobs", []):
         title, loc = j.get("title", ""), (j.get("location") or {}).get("name", "")
-        if not wanted(title) or not in_range(loc):
+        if not wanted(title) or not in_range(loc) or not right_level(title):
             continue
-        out.append(row(title, slug.title(), "it",
+        out.append(row(title, slug.title(), classify(title),
                        (TODAY + timedelta(days=DEFAULT_WINDOW_DAYS)).isoformat(),
                        j.get("absolute_url", ""), loc, 6, title.lower(), verify=True))
     return out
@@ -203,9 +236,9 @@ def from_lever(slug):
     for j in r.json():
         title = j.get("text", "")
         loc = (j.get("categories") or {}).get("location", "") or ""
-        if not wanted(title) or not in_range(loc):
+        if not wanted(title) or not in_range(loc) or not right_level(title):
             continue
-        out.append(row(title, slug.title(), "it",
+        out.append(row(title, slug.title(), classify(title),
                        (TODAY + timedelta(days=DEFAULT_WINDOW_DAYS)).isoformat(),
                        j.get("hostedUrl", ""), loc, 6, title.lower(), verify=True))
     return out
@@ -218,9 +251,9 @@ def from_ashby(slug):
     out = []
     for j in r.json().get("jobs", []):
         title, loc = j.get("title", ""), j.get("location", "") or ""
-        if not wanted(title) or not in_range(loc):
+        if not wanted(title) or not in_range(loc) or not right_level(title):
             continue
-        out.append(row(title, slug.title(), "it",
+        out.append(row(title, slug.title(), classify(title),
                        (TODAY + timedelta(days=DEFAULT_WINDOW_DAYS)).isoformat(),
                        j.get("jobUrl", ""), loc, 6, title.lower(), verify=True))
     return out
@@ -328,9 +361,16 @@ def main():
         jobs += from_ashby(s)
 
     print("Government notification pages", file=sys.stderr)
+    empty = []
     for org, cat, url in GOVT_SOURCES:
-        jobs += from_govt(org, cat, url)
+        got = from_govt(org, cat, url)
+        log(f"{org}: {len(got)}")
+        if not got:
+            empty.append(org)
+        jobs += got
         time.sleep(1)
+    if empty:
+        log("NO RESULTS FROM: " + ", ".join(empty))
 
     print("Optional keyed sources", file=sys.stderr)
     jobs += from_adzuna()
@@ -360,3 +400,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+        
