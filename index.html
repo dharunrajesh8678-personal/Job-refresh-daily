@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Velai — daily job board for Tamil Nadu &amp; India</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:        #0E1428;
+    --ink-2:      #171F3C;
+    --ink-3:      #212B50;
+    --line:       #2C3763;
+    --paper:      #EEF1FA;
+    --muted:      #8D97BC;
+    --central:    #E8B54B;
+    --tn:         #F0435F;
+    --it:         #45D6E0;
+    --nonit:      #A98BFA;
+    --alarm:      #FF4D6D;
+    --radius:     3px;
+    --display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:80px;
+  }
+  a{ color:inherit; }
+  button{ font:inherit; color:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--it); outline-offset:2px; }
+
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 18px; }
+
+  /* ---------- header ---------- */
+  .masthead{
+    border-bottom:1px solid var(--line);
+    padding:20px 0 16px;
+    display:flex; flex-wrap:wrap; gap:14px;
+    align-items:flex-end; justify-content:space-between;
+  }
+  .brand{ display:flex; align-items:baseline; gap:12px; }
+  .brand h1{
+    font-family:var(--display);
+    font-weight:800;
+    font-size:34px;
+    letter-spacing:-0.02em;
+    margin:0;
+    line-height:1;
+  }
+  .brand .ta{ font-size:19px; color:var(--muted); font-weight:400; letter-spacing:0.02em; }
+  .stamp{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--muted); text-align:right;
+  }
+  .stamp b{ color:var(--paper); font-weight:500; display:block; font-size:13px; letter-spacing:0.06em; }
+
+  /* ---------- deadline rail (signature) ---------- */
+  .rail-block{ padding:26px 0 8px; border-bottom:1px solid var(--line); }
+  .rail-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:var(--mono); font-size:11px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:2px;
+  }
+  .rail-head strong{ color:var(--paper); font-weight:500; }
+  .rail{
+    position:relative; height:96px; margin-top:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .rail-empty{
+    position:absolute; inset:0; display:flex; align-items:center;
+    font-size:13px; color:var(--muted);
+  }
+  .tick{
+    position:absolute; bottom:0; width:1px; background:var(--line); height:8px;
+  }
+  .tick-label{
+    position:absolute; bottom:-20px; transform:translateX(-50%);
+    font-family:var(--mono); font-size:10px; color:var(--muted); white-space:nowrap;
+  }
+  .dot{
+    position:absolute; width:11px; height:11px; border-radius:50%;
+    transform:translateX(-50%); border:0; padding:0;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .dot:hover, .dot:focus-visible{ transform:translateX(-50%) scale(1.55); z-index:5; }
+  .dot.urgent{ box-shadow:0 0 0 4px rgba(255,77,109,.18); }
+  .rail-note{ margin-top:26px; font-size:12.5px; color:var(--muted); }
+
+  /* ---------- controls ---------- */
+  .controls{ padding:18px 0 14px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .chip{
+    background:transparent; border:1px solid var(--line); border-radius:100px;
+    padding:6px 13px; font-size:12.5px; letter-spacing:0.02em;
+    display:inline-flex; align-items:center; gap:7px;
+  }
+  .chip .swatch{ width:7px; height:7px; border-radius:50%; }
+  .chip[aria-pressed="true"]{ background:var(--ink-3); border-color:var(--muted); color:#fff; }
+  .chip .n{ font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .search{
+    flex:1 1 190px; min-width:150px;
+    background:var(--ink-2); border:1px solid var(--line); border-radius:var(--radius);
+    padding:8px 12px; color:var(--paper); font-family:var(--body); font-size:14px;
+  }
+  .search::placeholder{ color:var(--muted); }
+  .btn{
+    background:var(--paper); color:var(--ink); border:0; border-radius:var(--radius);
+    padding:8px 15px; font-weight:600; font-size:13.5px;
+  }
+  .btn.ghost{ background:transparent; color:var(--paper); border:1px solid var(--line); font-weight:500; }
+
+  /* ---------- job list ---------- */
+  .daygroup{ margin-top:26px; }
+  .daygroup > h2{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--muted); font-weight:500; margin:0 0 10px; padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .job{
+    display:grid; grid-template-columns:1fr auto; gap:6px 18px;
+    padding:15px 16px; margin-bottom:8px;
+    background:var(--ink-2); border-left:3px solid var(--line); border-radius:0 var(--radius) var(--radius) 0;
+  }
+  .job:hover{ background:var(--ink-3); }
+  .job .title{ font-family:var(--display); font-size:17.5px; font-weight:600; letter-spacing:-0.01em; margin:0; }
+  .job .org{ color:var(--muted); font-size:13.5px; }
+  .job .meta{
+    grid-column:1/-1; display:flex; flex-wrap:wrap; gap:6px 16px;
+    font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:6px;
+  }
+  .job .meta .cat{ letter-spacing:0.1em; text-transform:uppercase; }
+  .job .right{ text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .countdown{ font-family:var(--mono); font-size:19px; font-weight:600; line-height:1; }
+  .countdown small{ display:block; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); font-weight:400; margin-top:4px; }
+  .countdown.urgent{ color:var(--alarm); }
+  .actions{ grid-column:1/-1; display:flex; gap:8px; margin-top:10px; }
+  .actions a, .actions button{
+    font-size:12.5px; padding:5px 12px; border-radius:var(--radius);
+    border:1px solid var(--line); background:transparent; text-decoration:none;
+  }
+  .actions a.apply{ background:var(--paper); color:var(--ink); border-color:var(--paper); font-weight:600; }
+  .actions button[aria-pressed="true"]{ border-color:var(--central); color:var(--central); }
+  .empty{ padding:40px 0; color:var(--muted); font-size:14px; }
+
+  /* ---------- sources ---------- */
+  .sources{ margin-top:54px; padding-top:26px; border-top:1px solid var(--line); }
+  .sources h2{ font-family:var(--display); font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 4px; }
+  .sources > p{ color:var(--muted); font-size:13.5px; margin:0 0 22px; max-width:60ch; }
+  .srcgrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:22px; }
+  .srccol h3{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase;
+    font-weight:500; margin:0 0 10px; padding-bottom:7px; border-bottom:1px solid var(--line);
+  }
+  .srccol ul{ list-style:none; margin:0; padding:0; }
+  .srccol li{ margin-bottom:2px; }
+  .srccol a{
+    display:block; padding:5px 0; font-size:13.5px; text-decoration:none;
+    color:var(--paper); border-bottom:1px solid transparent;
+  }
+  .srccol a:hover{ color:var(--it); }
+  .srccol a span{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--muted); }
+
+  /* ---------- drawer ---------- */
+  .scrim{ position:fixed; inset:0; background:rgba(8,11,22,.72); display:none; z-index:40; }
+  .scrim.open{ display:block; }
+  .drawer{
+    position:fixed; z-index:50; right:0; top:0; bottom:0; width:min(420px,100%);
+    background:var(--ink-2); border-left:1px solid var(--line);
+    padding:22px; overflow-y:auto; transform:translateX(100%);
+    transition:transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  .drawer.open{ transform:none; }
+  .drawer h2{ font-family:var(--display); font-size:22px; font-weight:800; margin:0 0 16px; letter-spacing:-0.02em; }
+  .field{ margin-bottom:13px; }
+  .field label{
+    display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:5px;
+  }
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--ink); border:1px solid var(--line); border-radius:var(--radius);
+    padding:9px 11px; color:var(--paper); font-family:var(--body); font-size:14px;
+  }
+  .drawer .row{ display:flex; gap:10px; margin-top:18px; }
+  .drawer .row .btn{ flex:1; }
+  .hint{ font-size:12px; color:var(--muted); margin-top:16px; line-height:1.5; }
+
+  /* ---------- role matching ---------- */
+  .banner{
+    display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+    margin-top:18px; padding:13px 16px;
+    background:var(--ink-2); border:1px solid var(--line); border-left:3px solid var(--it);
+    border-radius:0 var(--radius) var(--radius) 0; font-size:13.5px;
+  }
+  .banner.hide{ display:none; }
+  .banner p{ margin:0; color:var(--muted); }
+  .banner strong{ color:var(--paper); }
+
+  .sortsel{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:100px;
+    padding:6px 12px; font-size:12.5px; color:var(--paper);
+  }
+
+  .score{
+    font-family:var(--mono); font-size:11px; letter-spacing:0.08em;
+    padding:3px 8px; border-radius:100px; white-space:nowrap;
+    border:1px solid currentColor;
+  }
+  .score.strong{ color:#5BE39A; }
+  .score.fair  { color:var(--central); }
+  .score.weak  { color:var(--muted); }
+  .score.no    { color:var(--alarm); }
+
+  .why{
+    grid-column:1/-1; font-family:var(--mono); font-size:11px; color:var(--muted);
+    margin-top:6px; display:flex; flex-wrap:wrap; gap:6px;
+  }
+  .why b{ color:#5BE39A; font-weight:500; }
+  .job.ineligible{ opacity:.5; }
+
+  footer{ margin-top:48px; padding:22px 0; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
+  footer .fbar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+
+  @media (max-width:560px){
+    .brand h1{ font-size:27px; }
+    .brand .ta{ font-size:16px; }
+    .job{ grid-template-columns:1fr; }
+    .job .right{ align-items:flex-start; text-align:left; flex-direction:row; gap:12px; align-items:baseline; }
+    .countdown small{ display:inline; margin-left:4px; }
+    .rail{ height:80px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">
+      <h1>Velai</h1>
+      <span class="ta">வேலை</span>
+    </div>
+    <div class="stamp">
+      <b id="today">—</b>
+      Tamil Nadu &amp; India · updated daily
+    </div>
+  </header>
+
+  <!-- SIGNATURE: the closing window -->
+  <section class="rail-block">
+    <div class="rail-head">
+      <span>Closing window — next 30 days</span>
+      <span><strong id="urgentCount">0</strong> closing within 3 days</span>
+    </div>
+    <div class="rail" id="rail"></div>
+    <p class="rail-note">Each dot is one open application, placed by how many days you have left. Tap a dot to jump to it.</p>
+  </section>
+
+  <section class="controls" id="controls">
+    <button class="chip" data-cat="all" aria-pressed="true">All <span class="n" id="c-all">0</span></button>
+    <button class="chip" data-cat="central" aria-pressed="false"><span class="swatch" style="background:var(--central)"></span>Central govt <span class="n" id="c-central">0</span></button>
+    <button class="chip" data-cat="tn" aria-pressed="false"><span class="swatch" style="background:var(--tn)"></span>TN govt <span class="n" id="c-tn">0</span></button>
+    <button class="chip" data-cat="it" aria-pressed="false"><span class="swatch" style="background:var(--it)"></span>Private IT <span class="n" id="c-it">0</span></button>
+    <button class="chip" data-cat="nonit" aria-pressed="false"><span class="swatch" style="background:var(--nonit)"></span>Private non-IT <span class="n" id="c-nonit">0</span></button>
+    <button class="chip" id="matchOnly" aria-pressed="false">Fits my role</button>
+    <button class="chip" id="savedOnly" aria-pressed="false">Saved only</button>
+    <select class="sortsel" id="sort" aria-label="Sort jobs">
+      <option value="close">Sort: closing first</option>
+      <option value="match">Sort: best match</option>
+    </select>
+    <input class="search" id="search" type="search" placeholder="Search post, department, city…" aria-label="Search jobs">
+    <button class="btn ghost" id="openProfile">My role</button>
+    <button class="btn" id="openAdd">Add a job</button>
+  </section>
+
+  <div class="banner" id="banner">
+    <p id="bannerText">Tell the board what you do and every listing gets scored against it.</p>
+    <button class="btn" id="bannerBtn">Set up my role</button>
+  </div>
+
+  <main id="list"></main>
+
+  <!-- Launchpad -->
+  <section class="sources">
+    <h2>Check these every morning</h2>
+    <p>Official portals publish first — aggregators repeat them a few hours later. Open the four or five that match what you're hunting, then add anything relevant above so the closing window tracks it.</p>
+    <div class="srcgrid" id="srcgrid"></div>
+  </section>
+
+  <footer>
+    <div class="fbar">
+      <span>Sample rows are marked. Clear them once your own list is running.</span>
+      <span>
+        <button class="btn ghost" id="exportBtn">Export JSON</button>
+        <button class="btn ghost" id="importBtn">Import JSON</button>
+        <button class="btn ghost" id="feedBtn">Feed URL</button>
+        <button class="btn ghost" id="clearBtn">Clear all</button>
+      </span>
+    </div>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
+  <h2 id="drawerTitle">Add a job</h2>
+  <form id="jobForm">
+    <div class="field"><label for="f-title">Post / role</label><input id="f-title" required placeholder="Assistant Section Officer"></div>
+    <div class="field"><label for="f-org">Department or company</label><input id="f-org" required placeholder="TNPSC"></div>
+    <div class="field"><label for="f-cat">Category</label>
+      <select id="f-cat">
+        <option value="central">Central govt</option>
+        <option value="tn">Tamil Nadu govt</option>
+        <option value="it">Private — IT</option>
+        <option value="nonit">Private — non-IT</option>
+      </select>
+    </div>
+    <div class="field"><label for="f-close">Last date to apply</label><input id="f-close" type="date" required></div>
+    <div class="field"><label for="f-loc">Location</label><input id="f-loc" placeholder="Chennai"></div>
+    <div class="field"><label for="f-posts">Vacancies (optional)</label><input id="f-posts" placeholder="120"></div>
+    <div class="field"><label for="f-qual">Minimum qualification asked</label>
+      <select id="f-qual">
+        <option value="0">Any / not specified</option>
+        <option value="1">8th standard</option>
+        <option value="2">10th standard</option>
+        <option value="3">12th standard</option>
+        <option value="4">ITI</option>
+        <option value="5">Diploma</option>
+        <option value="6">Degree</option>
+        <option value="7">Post-graduate</option>
+      </select>
+    </div>
+    <div class="field"><label for="f-tags">Keywords / skills wanted</label><input id="f-tags" placeholder="java, spring, sql"></div>
+    <div class="field"><label for="f-url">Notification / apply link</label><input id="f-url" type="url" placeholder="https://"></div>
+    <div class="row">
+      <button type="submit" class="btn">Save job</button>
+      <button type="button" class="btn ghost" id="cancelAdd">Cancel</button>
+    </div>
+  </form>
+  <p class="hint">Everything you add stays on this device. Use <strong>Export JSON</strong> to move your list to another phone or laptop.</p>
+</aside>
+
+<aside class="drawer" id="pdrawer" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+  <h2 id="pTitle">My role</h2>
+  <form id="profileForm">
+    <div class="field"><label for="p-roles">Roles you want</label>
+      <input id="p-roles" placeholder="software engineer, backend developer">
+    </div>
+    <div class="field"><label for="p-skills">Skills, subjects or trade</label>
+      <input id="p-skills" placeholder="java, spring boot, sql, aws">
+    </div>
+    <div class="field"><label for="p-qual">Your highest qualification</label>
+      <select id="p-qual">
+        <option value="8">Post-graduate</option>
+        <option value="6" selected>Degree</option>
+        <option value="5">Diploma</option>
+        <option value="4">ITI</option>
+        <option value="3">12th standard</option>
+        <option value="2">10th standard</option>
+      </select>
+    </div>
+    <div class="field"><label for="p-loc">Cities you'd work in</label>
+      <input id="p-loc" placeholder="chennai, coimbatore, remote">
+    </div>
+    <div class="field"><label for="p-exp">Years of experience</label>
+      <input id="p-exp" type="number" min="0" max="40" placeholder="3">
+    </div>
+    <div class="row">
+      <button type="submit" class="btn">Save role</button>
+      <button type="button" class="btn ghost" id="cancelProfile">Cancel</button>
+    </div>
+  </form>
+  <p class="hint">Separate each entry with a comma. The board matches these words against every job title, department, location and skill list, then shows you exactly which words hit.</p>
+</aside>
+
+<script>
+/* ============================================================
+   Velai — daily job board
+   Single file. Host it anywhere (GitHub Pages, Netlify, Vercel).
+   ============================================================ */
+
+/* ---------- storage adapter (works inside Claude, in a browser, or offline) ---------- */
+const mem = {};
+const store = {
+  async get(k){
+    try{ if(window.storage){ const r = await window.storage.get(k); return r ? r.value : null; } }catch(e){}
+    try{ return localStorage.getItem(k); }catch(e){ return k in mem ? mem[k] : null; }
+  },
+  async set(k,v){
+    try{ if(window.storage){ await window.storage.set(k,v); return; } }catch(e){}
+    try{ localStorage.setItem(k,v); }catch(e){ mem[k]=v; }
+  }
+};
+
+const CATS = {
+  central:{ label:'Central govt', color:'var(--central)' },
+  tn:     { label:'Tamil Nadu govt', color:'var(--tn)' },
+  it:     { label:'Private — IT', color:'var(--it)' },
+  nonit:  { label:'Private — non-IT', color:'var(--nonit)' }
+};
+
+/* ---------- sample rows, dated relative to today so they never look stale ---------- */
+const SEED = [
+  { t:'Combined Graduate Level (CGL) 2026', o:'Staff Selection Commission', c:'central', d:9,  loc:'All India', posts:'12,256', q:6, k:'inspector, auditor, assistant, clerk', u:'https://ssc.gov.in/' },
+  { t:'Technician Grade I &amp; III',           o:'Railway Recruitment Board',    c:'central', d:2,  loc:'All India', posts:'—',      q:4, k:'technician, electrician, fitter, mechanic, iti', u:'https://www.rrbapply.gov.in/' },
+  { t:'Probationary Officer CRP-PO',        o:'IBPS',                         c:'central', d:4,  loc:'All India', posts:'—',      q:6, k:'banking, officer, finance', u:'https://www.ibps.in/' },
+  { t:'Group II &amp; IIA Services',            o:'TNPSC',                        c:'tn',      d:26, loc:'Tamil Nadu', posts:'—',     q:6, k:'assistant, revenue, junior assistant, administration', u:'https://www.tnpsc.gov.in/' },
+  { t:'Police Constable Grade II',          o:'TNUSRB',                       c:'tn',      d:16, loc:'Tamil Nadu', posts:'—',     q:3, k:'police, constable, uniform', u:'https://www.tnusrb.tn.gov.in/' },
+  { t:'Nurse — Grade II',                   o:'TN Medical Services Board',    c:'tn',      d:29, loc:'Tamil Nadu', posts:'—',     q:5, k:'nurse, nursing, healthcare, bsc nursing', u:'https://www.mrb.tn.gov.in/' },
+  { t:'Software Engineer II',               o:'Product company, Chennai',     c:'it',      d:12, loc:'Chennai',    posts:'—',     q:6, k:'java, spring boot, sql, backend, rest api, developer', u:'https://www.naukri.com/' },
+  { t:'QA Automation Engineer',             o:'SaaS company, Chennai',        c:'it',      d:21, loc:'Chennai, remote', posts:'—', q:6, k:'selenium, testing, qa, automation, python, cypress', u:'https://www.instahyre.com/' },
+  { t:'Branch Relationship Officer',        o:'Small finance bank',           c:'nonit',   d:6,  loc:'Coimbatore', posts:'—',     q:6, k:'sales, banking, customer, field, relationship', u:'https://www.apna.co/' },
+  { t:'Production Supervisor',              o:'Auto components manufacturer', c:'nonit',   d:18, loc:'Hosur',      posts:'—',     q:5, k:'production, manufacturing, supervisor, quality, diploma mechanical', u:'https://www.foundit.in/' }
+];
+
+/* ---------- the morning launchpad ---------- */
+const SOURCES = [
+  { group:'Central government', items:[
+    ['UPSC','upsc.gov.in','https://upsc.gov.in/'],
+    ['Staff Selection Commission','ssc.gov.in','https://ssc.gov.in/'],
+    ['Railway Recruitment (RRB)','rrbapply.gov.in','https://www.rrbapply.gov.in/'],
+    ['IBPS — bank recruitment','ibps.in','https://www.ibps.in/'],
+    ['SBI Careers','sbi.co.in/web/careers','https://sbi.co.in/web/careers'],
+    ['Reserve Bank of India','rbi.org.in','https://www.rbi.org.in/'],
+    ['ISRO','isro.gov.in','https://www.isro.gov.in/'],
+    ['DRDO','drdo.gov.in','https://www.drdo.gov.in/'],
+    ['India Post GDS','indiapostgdsonline.gov.in','https://indiapostgdsonline.gov.in/'],
+    ['Employment News','employmentnews.gov.in','https://www.employmentnews.gov.in/'],
+    ['National Career Service','ncs.gov.in','https://www.ncs.gov.in/']
+  ]},
+  { group:'Tamil Nadu government', items:[
+    ['TNPSC','tnpsc.gov.in','https://www.tnpsc.gov.in/'],
+    ['TN Govt portal','tn.gov.in','https://www.tn.gov.in/'],
+    ['Velaivaaippu — employment exchange','tnvelaivaaippu.gov.in','https://www.tnvelaivaaippu.gov.in/'],
+    ['TNUSRB — police','tnusrb.tn.gov.in','https://www.tnusrb.tn.gov.in/'],
+    ['MRB — medical services','mrb.tn.gov.in','https://www.mrb.tn.gov.in/'],
+    ['TRB — teacher recruitment','trb.tn.gov.in','https://www.trb.tn.gov.in/'],
+    ['TANGEDCO','tangedco.gov.in','https://www.tangedco.gov.in/'],
+    ['Chennai Metro Rail','chennaimetrorail.org','https://chennaimetrorail.org/']
+  ]},
+  { group:'Private — IT', items:[
+    ['Naukri','naukri.com','https://www.naukri.com/'],
+    ['LinkedIn Jobs','linkedin.com/jobs','https://www.linkedin.com/jobs/'],
+    ['Indeed India','in.indeed.com','https://in.indeed.com/'],
+    ['Instahyre','instahyre.com','https://www.instahyre.com/'],
+    ['Cutshort','cutshort.io','https://cutshort.io/'],
+    ['Hirist','hirist.tech','https://www.hirist.tech/'],
+    ['Wellfound — startups','wellfound.com','https://wellfound.com/']
+  ]},
+  { group:'Private — non-IT &amp; alerts', items:[
+    ['Apna','apna.co','https://apna.co/'],
+    ['WorkIndia','workindia.in','https://www.workindia.in/'],
+    ['Foundit','foundit.in','https://www.foundit.in/'],
+    ['Shine','shine.com','https://www.shine.com/'],
+    ['TimesJobs','timesjobs.com','https://www.timesjobs.com/'],
+    ['FreeJobAlert','freejobalert.com','https://www.freejobalert.com/'],
+    ['Sarkari Result','sarkariresult.com','https://www.sarkariresult.com/']
+  ]}
+];
+
+/* ---------- state ---------- */
+let jobs = [];
+let saved = new Set();
+let profile = null;          // { roles:[], skills:[], qual:6, locs:[], exp:'' }
+let filter = 'all';
+let savedOnly = false;
+let matchOnly = false;
+let sortBy = 'close';
+let query = '';
+
+const QUAL = { 0:'any', 1:'8th', 2:'10th', 3:'12th', 4:'ITI', 5:'Diploma', 6:'Degree', 7:'PG' };
+
+/* ---------- match scoring ----------
+   Words you supply are matched against the job's title, department,
+   location and skill list. Qualification is a gate, not a score:
+   if the job asks for more than you hold, it is flagged, not ranked.  */
+function scoreJob(j){
+  if(!profile) return null;
+  const terms = [...profile.roles, ...profile.skills].filter(Boolean);
+  const hay = (j.title+' '+j.org+' '+(j.tags||'')+' '+(j.loc||'')).toLowerCase();
+  const title = j.title.toLowerCase();
+
+  const hits = [];
+  terms.forEach(t=>{ if(hay.includes(t)) hits.push(t); });
+
+  const locHit = profile.locs.some(l =>
+    l && ((j.loc||'').toLowerCase().includes(l) || (j.loc||'').toLowerCase().includes('all india')));
+
+  const eligible = !j.qual || Number(j.qual) <= profile.qual;
+
+  let pts = Math.min(hits.length * 22, 66);
+  if(hits.some(t => title.includes(t))) pts += 14;   // the role itself, not just a stray skill
+  if(locHit) pts += 20;
+  pts = Math.min(pts, 100);
+
+  return { pts: eligible ? pts : 0, hits, locHit, eligible };
+}
+
+function scoreClass(s){
+  if(!s.eligible) return 'no';
+  if(s.pts >= 65) return 'strong';
+  if(s.pts >= 35) return 'fair';
+  return 'weak';
+}
+
+const $ = s => document.querySelector(s);
+const todayMidnight = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const iso = d => d.toISOString().slice(0,10);
+const daysLeft = j => Math.round((new Date(j.close+'T00:00:00') - todayMidnight()) / 86400000);
+const fmt = ds => new Date(ds+'T00:00:00').toLocaleDateString('en-IN',{ day:'numeric', month:'short' });
+
+function seedJobs(){
+  const base = todayMidnight();
+  return SEED.map((s,i)=>{
+    const dt = new Date(base); dt.setDate(dt.getDate()+s.d);
+    return { id:'seed-'+i, title:s.t, org:s.o, cat:s.c, close:iso(dt),
+             loc:s.loc, posts:s.posts, qual:s.q, tags:s.k, url:s.u, sample:true };
+  });
+}
+
+/* ---------- load ---------- */
+async function load(){
+  $('#today').textContent = new Date().toLocaleDateString('en-IN',
+    { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  const rawJobs = await store.get('velai:jobs');
+  const rawSaved = await store.get('velai:saved');
+  try{ jobs = rawJobs ? JSON.parse(rawJobs) : seedJobs(); }catch(e){ jobs = seedJobs(); }
+  try{ saved = new Set(rawSaved ? JSON.parse(rawSaved) : []); }catch(e){ saved = new Set(); }
+
+  const rawProfile = await store.get('velai:profile');
+  try{ profile = rawProfile ? JSON.parse(rawProfile) : null; }catch(e){ profile = null; }
+  if(profile) fillProfileForm();
+
+  // If a feed URL is set, try to pull today's list from it.
+  const feed = await store.get('velai:feed');
+  if(feed){
+    try{
+      const r = await fetch(feed, { cache:'no-store' });
+      const incoming = await r.json();
+      if(Array.isArray(incoming)) mergeFeed(incoming);
+    }catch(e){ console.warn('Feed unavailable:', e); }
+  }
+
+  renderSources();
+  render();
+}
+
+function mergeFeed(incoming){
+  const key = j => (j.title+'|'+j.org+'|'+j.close).toLowerCase();
+  const have = new Set(jobs.map(key));
+  incoming.forEach(j=>{
+    if(!j.title || !j.close || !CATS[j.cat]) return;
+    if(have.has(key(j))) return;
+    jobs.push({ id:'feed-'+Math.random().toString(36).slice(2,9), title:j.title, org:j.org||'—',
+                cat:j.cat, close:j.close, loc:j.loc||'', posts:j.posts||'—',
+                qual:Number(j.qual)||0, tags:(j.tags||'').toLowerCase(),
+                verify:!!j.verify, url:j.url||'' });
+  });
+  persist();
+}
+
+async function persist(){
+  await store.set('velai:jobs', JSON.stringify(jobs));
+  await store.set('velai:saved', JSON.stringify([...saved]));
+  await store.set('velai:profile', profile ? JSON.stringify(profile) : '');
+}
+
+/* ---------- render ---------- */
+function visible(){
+  const rows = jobs
+    .filter(j => daysLeft(j) >= 0)
+    .filter(j => filter==='all' || j.cat===filter)
+    .filter(j => !savedOnly || saved.has(j.id))
+    .filter(j => {
+      if(!matchOnly || !profile) return true;
+      const s = scoreJob(j);
+      return s && s.eligible && s.pts >= 35;
+    })
+    .filter(j => !query || (j.title+' '+j.org+' '+(j.loc||'')+' '+(j.tags||'')).toLowerCase().includes(query));
+
+  if(sortBy === 'match' && profile){
+    return rows.sort((a,b)=>{
+      const d = scoreJob(b).pts - scoreJob(a).pts;
+      return d !== 0 ? d : daysLeft(a) - daysLeft(b);
+    });
+  }
+  return rows.sort((a,b) => daysLeft(a) - daysLeft(b));
+}
+
+function renderRail(){
+  const rail = $('#rail');
+  rail.innerHTML = '';
+  const open = jobs
+    .filter(j => daysLeft(j) >= 0)
+    .filter(j => filter==='all' || j.cat===filter)
+    .filter(j => {
+      if(!matchOnly || !profile) return true;
+      const s = scoreJob(j);
+      return s && s.eligible && s.pts >= 35;
+    });
+
+  [0,10,20,30].forEach(d=>{
+    const x = (d/30)*100;
+    const t = document.createElement('div');
+    t.className='tick'; t.style.left = x+'%';
+    const l = document.createElement('div');
+    l.className='tick-label'; l.style.left = x+'%';
+    l.textContent = d===0 ? 'today' : '+'+d+'d';
+    rail.appendChild(t); rail.appendChild(l);
+  });
+
+  if(!open.length){
+    const e = document.createElement('div');
+    e.className='rail-empty';
+    e.textContent = 'Nothing open yet. Add a job and it appears here.';
+    rail.appendChild(e);
+    $('#urgentCount').textContent = '0';
+    return;
+  }
+
+  const stack = {};
+  open.forEach(j=>{
+    const dl = Math.min(daysLeft(j), 30);
+    stack[dl] = (stack[dl]||0) + 1;
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (daysLeft(j) <= 3 ? ' urgent' : '');
+    dot.style.left = (dl/30)*100 + '%';
+    dot.style.bottom = (10 + (stack[dl]-1)*14) + 'px';
+    dot.style.background = CATS[j.cat].color;
+    dot.title = j.title + ' — ' + j.org + ' · closes ' + fmt(j.close);
+    dot.setAttribute('aria-label', dot.title);
+    dot.onclick = ()=>{
+      const el = document.getElementById('job-'+j.id);
+      if(el){ el.scrollIntoView({behavior:'smooth', block:'center'});
+              el.style.outline='2px solid '+CATS[j.cat].color;
+              setTimeout(()=>el.style.outline='', 1600); }
+    };
+    rail.appendChild(dot);
+  });
+
+  $('#urgentCount').textContent = open.filter(j=>daysLeft(j)<=3).length;
+}
+
+function renderCounts(){
+  const open = jobs.filter(j => daysLeft(j) >= 0);
+  $('#c-all').textContent = open.length;
+  Object.keys(CATS).forEach(c=>{
+    $('#c-'+c).textContent = open.filter(j=>j.cat===c).length;
+  });
+}
+
+function renderList(){
+  const list = $('#list');
+  const rows = visible();
+  list.innerHTML = '';
+
+  if(!rows.length){
+    list.innerHTML = '<p class="empty">No open jobs match this filter. Widen the filter, or add one with <strong>Add a job</strong>.</p>';
+    return;
+  }
+
+  if(sortBy === 'match' && profile){
+    const sec = document.createElement('section');
+    sec.className='daygroup';
+    sec.innerHTML = '<h2>Ranked against your role · '+rows.length+'</h2>';
+    rows.forEach(j=> sec.appendChild(jobCard(j)));
+    list.appendChild(sec);
+    return;
+  }
+
+  const buckets = [
+    ['Closing this week', r => daysLeft(r) <= 7],
+    ['Closing in two weeks', r => daysLeft(r) > 7 && daysLeft(r) <= 14],
+    ['Later this month', r => daysLeft(r) > 14 && daysLeft(r) <= 31],
+    ['Beyond a month', r => daysLeft(r) > 31]
+  ];
+
+  buckets.forEach(([label, test])=>{
+    const set = rows.filter(test);
+    if(!set.length) return;
+    const sec = document.createElement('section');
+    sec.className='daygroup';
+    sec.innerHTML = '<h2>'+label+' · '+set.length+'</h2>';
+    set.forEach(j=> sec.appendChild(jobCard(j)));
+    list.appendChild(sec);
+  });
+}
+
+function jobCard(j){
+  const dl = daysLeft(j);
+  const el = document.createElement('article');
+  el.className='job';
+  el.id = 'job-'+j.id;
+  el.style.borderLeftColor = CATS[j.cat].color;
+
+  const left = document.createElement('div');
+  left.innerHTML = '<h3 class="title">'+esc(j.title)+'</h3>'
+                 + '<div class="org">'+esc(j.org)+'</div>';
+
+  const s = scoreJob(j);
+  if(s) el.classList.toggle('ineligible', !s.eligible);
+
+  const right = document.createElement('div');
+  right.className='right';
+  right.innerHTML = '<div class="countdown'+(dl<=3?' urgent':'')+'">'
+                  + (dl===0 ? 'today' : dl)
+                  + '<small>'+(dl===0?'last day':(dl===1?'day left':'days left'))+'</small></div>';
+  if(s){
+    const badge = document.createElement('span');
+    badge.className = 'score ' + scoreClass(s);
+    badge.textContent = s.eligible ? s.pts + '% fit' : 'above your qualification';
+    right.appendChild(badge);
+  }
+
+  const meta = document.createElement('div');
+  meta.className='meta';
+  const bits = [
+    '<span class="cat" style="color:'+CATS[j.cat].color+'">'+CATS[j.cat].label+'</span>',
+    'closes ' + fmt(j.close)
+  ];
+  if(j.loc) bits.push(esc(j.loc));
+  if(j.posts && j.posts !== '—') bits.push(esc(j.posts)+' posts');
+  if(j.qual) bits.push(QUAL[j.qual]+' and above');
+  if(j.verify) bits.push('confirm last date');
+  if(j.sample) bits.push('sample row');
+  meta.innerHTML = bits.map(b=>'<span>'+b+'</span>').join('');
+
+  let why = null;
+  if(s && (s.hits.length || s.locHit)){
+    why = document.createElement('div');
+    why.className='why';
+    const parts = s.hits.map(h=>'<b>'+esc(h)+'</b>');
+    if(s.locHit) parts.push('<b>your city</b>');
+    why.innerHTML = 'matched ' + parts.join(' · ');
+  }
+
+  const actions = document.createElement('div');
+  actions.className='actions';
+  if(j.url){
+    const a = document.createElement('a');
+    a.className='apply'; a.href=j.url; a.target='_blank'; a.rel='noopener';
+    a.textContent='Open notification'; actions.appendChild(a);
+  }
+  const sv = document.createElement('button');
+  sv.setAttribute('aria-pressed', saved.has(j.id));
+  sv.textContent = saved.has(j.id) ? 'Saved' : 'Save';
+  sv.onclick = ()=>{ saved.has(j.id) ? saved.delete(j.id) : saved.add(j.id); persist(); render(); };
+  actions.appendChild(sv);
+
+  const rm = document.createElement('button');
+  rm.textContent='Remove';
+  rm.onclick = ()=>{ jobs = jobs.filter(x=>x.id!==j.id); saved.delete(j.id); persist(); render(); };
+  actions.appendChild(rm);
+
+  el.append(left, right, meta);
+  if(why) el.appendChild(why);
+  el.appendChild(actions);
+  return el;
+}
+
+function renderSources(){
+  $('#srcgrid').innerHTML = SOURCES.map(g =>
+    '<div class="srccol"><h3>'+g.group+'</h3><ul>' +
+    g.items.map(([name,host,url]) =>
+      '<li><a href="'+url+'" target="_blank" rel="noopener">'+name+'<span>'+host+'</span></a></li>'
+    ).join('') + '</ul></div>'
+  ).join('');
+}
+
+function renderBanner(){
+  const b = $('#banner');
+  if(!profile){
+    b.classList.remove('hide');
+    $('#bannerText').textContent = 'Tell the board what you do and every listing gets scored against it.';
+    $('#bannerBtn').textContent = 'Set up my role';
+    return;
+  }
+  const open = jobs.filter(j => daysLeft(j) >= 0);
+  const fits = open.filter(j=>{ const s = scoreJob(j); return s.eligible && s.pts >= 35; });
+  b.classList.remove('hide');
+  $('#bannerText').innerHTML = '<strong>' + fits.length + ' of ' + open.length +
+    '</strong> open jobs fit ' + esc(profile.roles.concat(profile.skills).slice(0,3).join(', ') || 'your role') + '.';
+  $('#bannerBtn').textContent = 'Edit my role';
+}
+
+function fillProfileForm(){
+  if(!profile) return;
+  $('#p-roles').value  = profile.roles.join(', ');
+  $('#p-skills').value = profile.skills.join(', ');
+  $('#p-qual').value   = profile.qual;
+  $('#p-loc').value    = profile.locs.join(', ');
+  $('#p-exp').value    = profile.exp || '';
+}
+
+function render(){ renderBanner(); renderRail(); renderCounts(); renderList(); }
+function esc(s){ return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+/* ---------- events ---------- */
+document.querySelectorAll('.chip[data-cat]').forEach(b=>{
+  b.onclick = ()=>{
+    filter = b.dataset.cat;
+    document.querySelectorAll('.chip[data-cat]').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    render();
+  };
+});
+$('#savedOnly').onclick = e=>{
+  savedOnly = !savedOnly;
+  e.currentTarget.setAttribute('aria-pressed', savedOnly);
+  render();
+};
+$('#matchOnly').onclick = e=>{
+  if(!profile){ openProfile(true); return; }
+  matchOnly = !matchOnly;
+  e.currentTarget.setAttribute('aria-pressed', matchOnly);
+  render();
+};
+$('#sort').onchange = e=>{
+  if(e.target.value === 'match' && !profile){ e.target.value = 'close'; openProfile(true); return; }
+  sortBy = e.target.value;
+  renderList();
+};
+
+function openProfile(open){
+  $('#pdrawer').classList.toggle('open', open);
+  $('#scrim').classList.toggle('open', open);
+  if(open) $('#p-roles').focus();
+}
+$('#openProfile').onclick = ()=>openProfile(true);
+$('#bannerBtn').onclick  = ()=>openProfile(true);
+$('#cancelProfile').onclick = ()=>openProfile(false);
+
+const split = v => v.toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
+$('#profileForm').onsubmit = e=>{
+  e.preventDefault();
+  profile = {
+    roles:  split($('#p-roles').value),
+    skills: split($('#p-skills').value),
+    qual:   Number($('#p-qual').value),
+    locs:   split($('#p-loc').value),
+    exp:    $('#p-exp').value
+  };
+  if(!profile.roles.length && !profile.skills.length){
+    alert('Add at least one role or skill so there is something to match against.');
+    return;
+  }
+  persist(); openProfile(false); render();
+};
+$('#search').oninput = e=>{ query = e.target.value.trim().toLowerCase(); renderList(); };
+
+function openDrawer(open){
+  $('#drawer').classList.toggle('open', open);
+  $('#scrim').classList.toggle('open', open);
+  if(open) $('#f-title').focus();
+}
+$('#openAdd').onclick = ()=>openDrawer(true);
+$('#cancelAdd').onclick = ()=>openDrawer(false);
+$('#scrim').onclick = ()=>{ openDrawer(false); openProfile(false); };
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ openDrawer(false); openProfile(false); }
+});
+
+$('#jobForm').onsubmit = e=>{
+  e.preventDefault();
+  jobs.push({
+    id:'j-'+Date.now(),
+    title:$('#f-title').value.trim(),
+    org:$('#f-org').value.trim(),
+    cat:$('#f-cat').value,
+    close:$('#f-close').value,
+    loc:$('#f-loc').value.trim(),
+    posts:$('#f-posts').value.trim() || '—',
+    qual:Number($('#f-qual').value),
+    tags:$('#f-tags').value.trim().toLowerCase(),
+    url:$('#f-url').value.trim()
+  });
+  persist(); render(); e.target.reset(); openDrawer(false);
+};
+
+$('#exportBtn').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(jobs,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'velai-jobs-'+iso(new Date())+'.json';
+  a.click();
+};
+$('#importBtn').onclick = ()=>{
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='application/json';
+  inp.onchange = async ()=>{
+    try{
+      const txt = await inp.files[0].text();
+      const arr = JSON.parse(txt);
+      if(Array.isArray(arr)){ mergeFeed(arr); render(); }
+    }catch(e){ alert('That file is not a job list in JSON format.'); }
+  };
+  inp.click();
+};
+$('#feedBtn').onclick = async ()=>{
+  const cur = await store.get('velai:feed') || '';
+  const v = prompt('URL of your daily jobs.json (leave blank to turn the feed off):', cur);
+  if(v === null) return;
+  await store.set('velai:feed', v.trim());
+  location.reload();
+};
+$('#clearBtn').onclick = ()=>{
+  if(!confirm('Remove every job from this list? Saved marks go too.')) return;
+  jobs = []; saved = new Set(); persist(); render();
+};
+
+load();
+</script>
+</body>
+</html>
