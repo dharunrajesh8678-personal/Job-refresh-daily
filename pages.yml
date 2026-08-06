@@ -1,0 +1,42 @@
+# Publishes the repo as a static site â€” no Jekyll, no build step, no timeout.
+# Requires: Settings -> Pages -> Source: "GitHub Actions"
+#
+# Runs on every push to main, which includes the collector bot's commits,
+# so the live site updates itself whenever new jobs land.
+
+name: Deploy site to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# let a running deploy finish rather than cancelling it
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - name: Package the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."          # everything at the repo root, as-is
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
