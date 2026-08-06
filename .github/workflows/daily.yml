@@ -1,0 +1,37 @@
+name: Collect jobs daily
+
+on:
+  schedule:
+    - cron: "30 0 * * *"     # 00:30 UTC = 6:00 AM IST, every day
+  workflow_dispatch:          # also lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Collect jobs
+        env:
+          ADZUNA_APP_ID:  ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          SERPAPI_KEY:    ${{ secrets.SERPAPI_KEY }}
+        run: python scrape.py
+
+      - name: Publish jobs.json
+        run: |
+          git config user.name  "velai-bot"
+          git config user.email "velai-bot@users.noreply.github.com"
+          git add jobs.json
+          git diff --staged --quiet || git commit -m "Jobs for $(date -u +%Y-%m-%d)"
+          git push
