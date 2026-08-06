@@ -2,7 +2,7 @@ name: Collect jobs daily
 
 on:
   schedule:
-    - cron: "30 0 * * *"     # 00:30 UTC = 6:00 AM IST, every day
+    - cron: "0 */2 * * *"     # 00:30 UTC = 6:00 AM IST, every day
   workflow_dispatch:          # also lets you run it by hand from the Actions tab
 
 permissions:
