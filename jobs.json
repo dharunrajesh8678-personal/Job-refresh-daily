@@ -1,17 +1,5 @@
 [
  {
-  "title": "Account Executive, IT/ITES & Automotive, Pune",
-  "org": "Postman",
-  "cat": "nonit",
-  "close": "2026-09-06",
-  "loc": "India",
-  "posts": "—",
-  "qual": 6,
-  "tags": "account executive, it/ites & automotive, pune",
-  "url": "https://job-boards.greenhouse.io/postman/jobs/7748732003",
-  "verify": true
- },
- {
   "title": "Enterprise Account Executive",
   "org": "Postman",
   "cat": "nonit",
@@ -93,6 +81,18 @@
   "qual": 6,
   "tags": "gtm engineer – meesho ai services (mas)",
   "url": "https://jobs.lever.co/meesho/c49e13f6-f027-42f3-98b5-745d83997cbf",
+  "verify": true
+ },
+ {
+  "title": "Software Development Engineer II - Data",
+  "org": "Meesho",
+  "cat": "it",
+  "close": "2026-09-06",
+  "loc": "Bangalore, Karnataka",
+  "posts": "—",
+  "qual": 6,
+  "tags": "software development engineer ii - data",
+  "url": "https://jobs.lever.co/meesho/baf0eddc-4fac-4520-aa41-a922adbdefc0",
   "verify": true
  },
  {
